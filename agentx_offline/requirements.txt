@@ -1,0 +1,11 @@
+# agentx-harness pins (verified working offline on 2026-10-28)
+# sentencepiece is pinned: 0.2.2 crashes with an access violation on some
+# Windows hosts, and 0.2.0 is what the verified run used.
+agentx-harness==1.0.7
+sentencepiece==0.2.0
+transformers==5.21.0
+datasets==5.1.0
+pyarrow==26.0.0
+numpy==2.4.6
+pydantic==2.14.1
+aiohttp==3.13.5

@@ -1,0 +1,41 @@
+# Offline AgentX test rig.
+#
+#   docker compose -f agentx_offline/docker-compose.yml run --rm agentx \
+#     run --url http://host.docker.internal:8000 --model Qwen3-8B \
+#     --concurrency 4,8 --duration 900
+#
+# Or drive it entirely from env:
+#   TARGET_URL=http://10.0.0.5:8000 TARGET_MODEL=Qwen3-8B TARGET_NAME=qwen3-8b \
+#     docker compose -f agentx_offline/docker-compose.yml run --rm agentx
+services:
+  agentx:
+    image: agentx-offline:1.0.7
+    build:
+      context: .
+    volumes:
+      - ./results:/results
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      TARGET_URL: ${TARGET_URL:-http://host.docker.internal:8092}
+      TARGET_MODEL: ${TARGET_MODEL:-gpt-3.5-turbo}
+      TARGET_NAME: ${TARGET_NAME:-mock-a}
+      CONCURRENCY: ${CONCURRENCY:-4}
+      DURATION: ${DURATION:-120}
+      ENTRIES: ${ENTRIES:-8}
+    command:
+      - run
+      - --url
+      - ${TARGET_URL:-http://host.docker.internal:8092}
+      - --model
+      - ${TARGET_MODEL:-gpt-3.5-turbo}
+      - --target
+      - ${TARGET_NAME:-mock-a}
+      - --concurrency
+      - ${CONCURRENCY:-4}
+      - --duration
+      - ${DURATION:-120}
+      - --entries
+      - ${ENTRIES:-8}
+      - --out
+      - /results

@@ -1,0 +1,50 @@
+{
+  "target": "qwen35-128k",
+  "url": "http://127.0.0.1:8080",
+  "model": "qwen3.5",
+  "window": "128k",
+  "max_context": 130560,
+  "sla": {
+    "ttft_p90": 30000.0,
+    "itl_p50": 50.0,
+    "e2e_p90": 0,
+    "min_success": 99.0
+  },
+  "rows": [
+    {
+      "concurrency": 2,
+      "ok": true,
+      "stats": {
+        "requests": 8,
+        "success_pct": 100.0,
+        "out_tps": 36.12608976022818,
+        "rps": 0.053332481653778456,
+        "ttft_p90": 14280.1444158,
+        "ttft_p50": 8078.862301499999,
+        "itl_p50": 7.557006150483654,
+        "e2e_p90": 25904.930621599997
+      },
+      "sla_ok": true,
+      "sla_failures": [],
+      "elapsed_s": 316.8
+    },
+    {
+      "concurrency": 4,
+      "ok": true,
+      "stats": {
+        "requests": 17,
+        "success_pct": 100.0,
+        "out_tps": 73.71926985338928,
+        "rps": 0.1133322108435176,
+        "ttft_p90": 8812.024992400002,
+        "ttft_p50": 6313.3027409999995,
+        "itl_p50": 21.473840688997555,
+        "e2e_p90": 26136.222888000008
+      },
+      "sla_ok": true,
+      "sla_failures": [],
+      "elapsed_s": 377.2
+    }
+  ],
+  "recommended": null
+}

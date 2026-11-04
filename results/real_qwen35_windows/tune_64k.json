@@ -1,0 +1,93 @@
+{
+  "target": "qwen35-64k",
+  "url": "http://127.0.0.1:8080",
+  "model": "qwen3.5",
+  "window": "64k",
+  "max_context": 65024,
+  "sla": {
+    "ttft_p90": 5000.0,
+    "itl_p50": 50.0,
+    "e2e_p90": 0,
+    "min_success": 99.0
+  },
+  "rows": [
+    {
+      "concurrency": 2,
+      "ok": true,
+      "stats": {
+        "requests": 9,
+        "success_pct": 100.0,
+        "out_tps": 56.43722250339341,
+        "rps": 0.06813346781093772,
+        "ttft_p90": 13780.562657600001,
+        "ttft_p50": 8558.173646,
+        "itl_p50": 10.611707166666665,
+        "e2e_p90": 45266.802787199995
+      },
+      "sla_ok": false,
+      "sla_failures": [
+        "TTFT p90 13781 > 5000"
+      ],
+      "elapsed_s": 272.5
+    },
+    {
+      "concurrency": 4,
+      "ok": true,
+      "stats": {
+        "requests": 20,
+        "success_pct": 100.0,
+        "out_tps": 43.63955210178819,
+        "rps": 0.16402763428599207,
+        "ttft_p90": 7196.250829700002,
+        "ttft_p50": 3698.233937,
+        "itl_p50": 10.37229018772025,
+        "e2e_p90": 19018.546813100013
+      },
+      "sla_ok": false,
+      "sla_failures": [
+        "TTFT p90 7196 > 5000"
+      ],
+      "elapsed_s": 270.8
+    },
+    {
+      "concurrency": 8,
+      "ok": true,
+      "stats": {
+        "requests": 23,
+        "success_pct": 100.0,
+        "out_tps": 31.321683093876757,
+        "rps": 0.18118679858127903,
+        "ttft_p90": 6914.4654934,
+        "ttft_p50": 3375.652511,
+        "itl_p50": 9.894865690789473,
+        "e2e_p90": 10654.474625399998
+      },
+      "sla_ok": false,
+      "sla_failures": [
+        "TTFT p90 6914 > 5000"
+      ],
+      "elapsed_s": 407.8
+    },
+    {
+      "concurrency": 16,
+      "ok": false,
+      "stats": {
+        "requests": 15,
+        "success_pct": 93.33,
+        "out_tps": 63.88031677930444,
+        "rps": 0.19183278312103433,
+        "ttft_p90": 8674.345503199998,
+        "ttft_p50": 6346.274218,
+        "itl_p50": 38.38354420679887,
+        "e2e_p90": 32889.68788299999
+      },
+      "sla_ok": false,
+      "sla_failures": [
+        "success 93.3% < 99.0%",
+        "TTFT p90 8674 > 5000"
+      ],
+      "elapsed_s": 601.4
+    }
+  ],
+  "recommended": null
+}

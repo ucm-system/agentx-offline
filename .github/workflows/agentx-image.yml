@@ -1,0 +1,149 @@
+name: agentx-offline image
+
+# Builds the AgentX offline test image natively for amd64 and arm64.
+#
+# - default: slim images (no baked corpus, ~2 GB), pushed as :<version>-<arch>-slim
+# - with_cache=true: each runner first pulls the 393-trace corpus + tokenizer into
+#   the build context, then builds the full image (~3.9 GB) as :<version>-<arch>
+#
+# Trigger manually (Actions -> Run workflow) or push a tag like agentx-v1.0.7.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image tag (e.g. 1.0.7)"
+        required: true
+        default: "1.0.7"
+      with_cache:
+        description: "Bake the 393-trace corpus + tokenizer into the image"
+        type: boolean
+        default: false
+      push:
+        description: "Push to GHCR"
+        type: boolean
+        default: true
+  push:
+    tags:
+      - "agentx-v*"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/agentx-offline
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: agentx-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve inputs
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            WITH_CACHE="${{ inputs.with_cache }}"
+            PUSH="${{ inputs.push }}"
+          else
+            VERSION="${GITHUB_REF_NAME#agentx-v}"
+            WITH_CACHE="false"
+            PUSH="true"
+          fi
+          SUFFIX=""
+          [ "$WITH_CACHE" = "true" ] || SUFFIX="-slim"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=${VERSION}-${{ matrix.arch }}${SUFFIX}" >> "$GITHUB_OUTPUT"
+          echo "with_cache=$WITH_CACHE" >> "$GITHUB_OUTPUT"
+          echo "push=$PUSH" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Ensure empty cache dir
+        run: mkdir -p agentx_offline/cache
+
+      - name: Login to GHCR
+        if: steps.meta.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build slim image (loaded locally for cache prep)
+        uses: docker/build-push-action@v6
+        with:
+          context: agentx_offline
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            WITH_CACHE=0
+            PIP_INDEX_URL=https://pypi.org/simple
+            PIP_TRUSTED_HOST=pypi.org
+          load: true
+          tags: agentx-offline:ci-${{ matrix.arch }}
+
+      - name: Bake corpus cache
+        if: steps.meta.outputs.with_cache == 'true'
+        shell: bash
+        run: |
+          mkdir -p agentx_offline/cache
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HF_ENDPOINT=https://hf-mirror.com \
+            -e HF_HOME=/cache \
+            -e HOME=/tmp \
+            -v "$PWD/agentx_offline/cache:/cache" \
+            --entrypoint python \
+            agentx-offline:ci-${{ matrix.arch }} /opt/agentx/prefetch_cache.py
+          du -sh agentx_offline/cache
+
+      - name: Build and push final image
+        uses: docker/build-push-action@v6
+        with:
+          context: agentx_offline
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            WITH_CACHE=${{ steps.meta.outputs.with_cache == 'true' && '1' || '0' }}
+            PIP_INDEX_URL=https://pypi.org/simple
+            PIP_TRUSTED_HOST=pypi.org
+          push: ${{ steps.meta.outputs.push == 'true' }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+
+  manifest:
+    name: multi-arch manifest
+    needs: build
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'workflow_dispatch' && inputs.with_cache == true
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create manifest
+        shell: bash
+        run: |
+          docker buildx imagetools create \
+            -t "$REGISTRY/$IMAGE_NAME:${{ inputs.version }}" \
+            "$REGISTRY/$IMAGE_NAME:${{ inputs.version }}-amd64" \
+            "$REGISTRY/$IMAGE_NAME:${{ inputs.version }}-arm64"

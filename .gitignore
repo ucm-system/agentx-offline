@@ -1,0 +1,8 @@
+cache/
+__pycache__/
+*.pyc
+.venv/
+results/_*/
+dist/
+*.tar
+*.whl

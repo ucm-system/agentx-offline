@@ -1,0 +1,6 @@
+# Docker build context for agentx_offline/ — keep it small.
+**/__pycache__
+**/*.pyc
+results
+*.tar
+*.tgz
